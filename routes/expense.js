@@ -1139,11 +1139,6 @@ router.get('/TourBillClaimListView',verify,(request,response)=>{
   response.render('TourBillClaimListView',{objUser,expenseId});
 })
 
-
-
-
-
-
 router.get('/getConveyanceVoucherDetail',verify,(request, response) => {
 
   let  conveyanceId= request.query.conveyanceId;
@@ -1176,6 +1171,65 @@ router.get('/getConveyanceVoucherDetail',verify,(request, response) => {
 })
 
 
+router.get('/tourBillClaimActivityCode', verify ,(request, response) => {
+
+  console.log('hello i am inside Tour Bill Claim Activity Code');
+
+  let tourbillId = request.query.tourbillId;
+
+  console.log('tourbillId :' +tourbillId)
+  let expenseId;
+  let projectId ;
+
+              pool
+              .query('SELECT sfid, Expense__c FROM salesforce.Tour_Bill_Claim__c WHERE  sfid = $1',[tourbillId])
+              .then((tourBillClaimQueryResult) => {
+                console.log('tourBillClaimQueryResult :' +JSON.stringify(tourBillClaimQueryResult.rows));
+                expenseId = tourBillClaimQueryResult.rows[0].expense__c;
+                if(tourBillClaimQueryResult.rowCount > 0)
+                {
+                  pool
+                  .query('SELECT sfid, project_name__c FROM salesforce.Milestone1_Expense__c WHERE  sfid = $1',[expenseId])
+                  .then((expenseQueryResult) => {
+                    console.log('expenseQueryResult :' +JSON.stringify(expenseQueryResult.rows));
+                    if(expenseQueryResult.rowCount > 0)
+                    {
+                      projectId = expenseQueryResult.rows[0].project_name__c;
+                      console.log('Inside ExpenseQuery  : '+projectId);
+                    
+                      pool
+                      .query('Select sfid , Name FROM salesforce.Activity_Code__c where Project__c = $1', [projectId])
+                      .then((activityCodeQueryResult) => {
+                        console.log('activityCodeQueryResult  : '+JSON.stringify(activityCodeQueryResult.rows));
+                        let numberOfRows, lstActivityCode =[];
+                        if(activityCodeQueryResult.rowCount > 0)
+                        {
+                          numberOfRows = activityCodeQueryResult.rows.length;
+                          for(let i=0; i< numberOfRows ; i++)
+                          {
+                            lstActivityCode.push(activityCodeQueryResult.rows[i]);
+                          }
+                          response.send(lstActivityCode);
+                        }
+                      })
+                      .catch((activityCodeQueryError) => {
+                        console.log('activityCodeQueryError  : '+activityCodeQueryError.stack);
+                        response.send([]);
+                      })
+                    }
+                  })
+                  .catch((expenseQueryError) =>
+                      {
+                    console.log('expenseQueryError  : '+expenseQueryError.stack);
+                     })
+                    }
+                })
+         .catch((tourBillClaimQueryError) =>
+              {
+               console.log('tourBillClaimQueryError  : '+tourBillClaimQueryError.stack);
+             })
+  })
+ 
 
 
 
